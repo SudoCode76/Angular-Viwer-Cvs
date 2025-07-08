@@ -1,0 +1,120 @@
+<p-toast></p-toast>
+
+<div class="container">
+  <p-card header="Carga y Visualización de CSV" class="mt-4">
+    <div class="card-container">
+
+      <!-- 1. Carga de archivo CSV -->
+      <p-fileUpload
+        mode="basic"
+        chooseLabel="Seleccionar CSV"
+        accept=".csv"
+        [auto]="true"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        (onSelect)="onFileSelect($event)"
+        class="mb-4">
+      </p-fileUpload>
+
+      <!-- 2. Tabla solo si hay datos -->
+      <div *ngIf="csvData.length > 0" class="csv-data-section">
+
+        <p-toolbar class="mb-3">
+          <ng-template pTemplate="start">
+            <span class="font-bold">Total de registros: {{ csvData.length }}</span>
+          </ng-template>
+        </p-toolbar>
+
+        <p-table
+          #dt
+          [value]="paginatedData"
+          [tableStyle]="{ 'min-width': '50rem' }"
+          class="p-datatable-striped"
+        >
+
+          <!-- 2.a Buscador global -->
+          <ng-template pTemplate="caption">
+            <div class="flex justify-content-between align-items-center">
+              <h5 class="m-0">Datos CSV</h5>
+              <span class="p-input-icon-left">
+                <i class="pi pi-search"></i>
+                <input
+                  pInputText
+                  #buscar
+                  type="text"
+                  (input)="dt.filterGlobal(buscar.value, 'contains')"
+                  placeholder="Buscar..." />
+              </span>
+            </div>
+          </ng-template>
+
+          <!-- 2.b Cabecera -->
+          <ng-template pTemplate="header">
+            <tr>
+              <ng-container *ngFor="let header of csvHeaders; trackBy: trackHeader">
+                <th pSortableColumn="{{ header }}">
+                  {{ header }}
+                  <p-sortIcon field="{{ header }}"></p-sortIcon>
+                </th>
+              </ng-container>
+            </tr>
+          </ng-template>
+
+          <!-- 2.c Cuerpo -->
+          <ng-template pTemplate="body" let-rowData>
+            <tr>
+              <ng-container *ngFor="let header of csvHeaders; trackBy: trackHeader">
+                <td>{{ rowData[header] }}</td>
+              </ng-container>
+            </tr>
+          </ng-template>
+
+          <!-- 2.d Sin datos -->
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td [attr.colspan]="csvHeaders.length" style="text-align: center;">
+                No se encontraron datos.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+
+        <!-- PAGINADOR -->
+        <div class="flex justify-content-end mt-2">
+          <p-paginator
+            [first]="first"
+            [rows]="rows"
+            [totalRecords]="csvData.length"
+            [rowsPerPageOptions]="[5, 10, 20, 50]"
+            [showCurrentPageReport]="true"
+            [showPageLinks]="true"
+            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} entradas"
+            (onPageChange)="onPageChange($event)">
+          </p-paginator>
+        </div>
+
+        <!-- 3. Botones -->
+        <div class="flex justify-content-end mt-4 gap-2">
+          <p-button label="Calcular Promedio" icon="pi pi-calculator" (onClick)="calcularPromedio()"></p-button>
+          <p-button label="Filtrar Datos" icon="pi pi-filter" (onClick)="filtrarDatos()"></p-button>
+          <p-button label="Resetear Datos" icon="pi pi-refresh" severity="secondary" (onClick)="resetDatos($event)"></p-button>
+        </div>
+
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- 4. Diálogo de resultados -->
+<p-dialog
+  header="Resultado de la operación"
+  [(visible)]="mostrarDialogoResultado"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+  [draggable]="false"
+  [resizable]="false">
+  <p class="m-0">{{ resultadoOperacion }}</p>
+  <ng-template pTemplate="footer">
+    <p-button icon="pi pi-check" label="Aceptar" (onClick)="mostrarDialogoResultado = false" class="p-button-text"></p-button>
+  </ng-template>
+</p-dialog>
