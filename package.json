@@ -30,6 +30,8 @@
     "@angular/router": "^20.0.0",
     "@angular/ssr": "^20.0.4",
     "@primeuix/themes": "^1.2.1",
+    "@types/chart.js": "^2.9.41",
+    "chart.js": "^4.5.0",
     "express": "^5.1.0",
     "papaparse": "^5.5.3",
     "primeicons": "^7.0.0",

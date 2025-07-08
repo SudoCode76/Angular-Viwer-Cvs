@@ -18,7 +18,6 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     FilterService,
     provideAnimationsAsync(),
-    // Añadir el proveedor HTTP moderno:
     provideHttpClient(withInterceptorsFromDi()),
     providePrimeNG({
       theme: {

@@ -13,6 +13,8 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
+import { ChartModule } from 'primeng/chart';
+import {Navbar} from '../navbar/navbar'; // <--- Asegúrate de importar esto
 
 @Component({
   selector: 'app-inicio',
@@ -28,8 +30,10 @@ import { PaginatorModule } from 'primeng/paginator';
     ToolbarModule,
     InputTextModule,
     PaginatorModule,
+    ChartModule,
     NgIf,
-    NgForOf
+    NgForOf,
+    Navbar
   ],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css'
@@ -46,6 +50,11 @@ export class Inicio {
   rows: number = 10;       // Filas por página
   first: number = 0;       // Primer índice de la página
   paginatedData: any[] = []; // Datos a mostrar en la página actual
+
+  // --- GRÁFICO ---
+  chartData: any = null;
+  chartOptions: any = null;
+  mostrarGrafico: boolean = false;
 
   constructor(private messageService: MessageService) {}
 
@@ -90,6 +99,7 @@ export class Inicio {
     }
     this.first = 0;
     this.updatePaginatedData();
+    this.mostrarGrafico = false; // Oculta el gráfico al cargar nuevos datos
   }
 
   calcularPromedio(): void {
@@ -100,9 +110,9 @@ export class Inicio {
     if (columnaNumericaHeader) {
       const valores = this.csvData
         .map(row => row[columnaNumericaHeader])
-        .filter(val => typeof val === 'number');
+        .filter((val: any) => typeof val === 'number');
 
-      const suma = valores.reduce((acc, val) => acc + val, 0);
+      const suma = valores.reduce((acc: number, val: number) => acc + val, 0);
       const promedio = valores.length > 0 ? suma / valores.length : 0;
 
       this.resultadoOperacion = `El promedio de ${columnaNumericaHeader} es: ${promedio.toFixed(2)}`;
@@ -116,43 +126,12 @@ export class Inicio {
     }
   }
 
-  filtrarDatos(): void {
-    const columnaNumericaHeader = this.csvHeaders.find(header =>
-      this.csvData.some(row => typeof row[header] === 'number')
-    );
 
-    if (columnaNumericaHeader) {
-      const valores = this.csvData.map(row => row[columnaNumericaHeader])
-        .filter(val => typeof val === 'number');
-
-      const suma = valores.reduce((acc, val) => acc + val, 0);
-      const promedio = valores.length > 0 ? suma / valores.length : 0;
-
-      const datosFiltrados = this.csvData.filter(row =>
-        typeof row[columnaNumericaHeader] === 'number' && row[columnaNumericaHeader] > promedio
-      );
-
-      this.csvData = datosFiltrados;
-      this.first = 0; // volver a la primera página tras filtrar
-      this.updatePaginatedData();
-
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Datos filtrados',
-        detail: `Mostrando ${datosFiltrados.length} registros con ${columnaNumericaHeader} mayor que ${promedio.toFixed(2)}`
-      });
-    } else {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'No hay datos numéricos',
-        detail: 'No se encontró ninguna columna con valores numéricos para filtrar'
-      });
-    }
-  }
 
   resetDatos(event: any): void {
     this.onFileSelect(event);
     setTimeout(() => this.updatePaginatedData(), 0);
+    this.mostrarGrafico = false;
   }
 
   // --- PAGINACIÓN ---
@@ -168,5 +147,72 @@ export class Inicio {
 
   trackHeader(index: number, item: string): string {
     return item;
+  }
+
+  // --- MÉTODO GRÁFICO ---
+  generarGrafico(): void {
+    const columnaNumericaHeader = this.csvHeaders.find(header =>
+      this.csvData.some(row => typeof row[header] === 'number')
+    );
+
+    if (columnaNumericaHeader) {
+      // Ejemplo: barras por cada valor único de una columna categórica (si hay)
+      const categoriaHeader = this.csvHeaders.find(header =>
+        header !== columnaNumericaHeader
+      );
+
+      if (categoriaHeader) {
+        // Agrupa por categoría
+        const grupos = this.csvData.reduce((acc: Record<string, number[]>, row: any) => {
+          const cat = row[categoriaHeader] || 'Sin categoría';
+          if (!acc[cat]) acc[cat] = [];
+          if (typeof row[columnaNumericaHeader] === 'number') {
+            acc[cat].push(row[columnaNumericaHeader]);
+          }
+          return acc;
+        }, {} as Record<string, number[]>);
+
+        const labels = Object.keys(grupos);
+        const promedios = labels.map(cat =>
+          grupos[cat].reduce((a: number, b: number) => a + b, 0) / grupos[cat].length
+        );
+
+        this.chartData = {
+          labels: labels,
+          datasets: [
+            {
+              label: `Promedio de ${columnaNumericaHeader}`,
+              data: promedios,
+              backgroundColor: '#42A5F5'
+            }
+          ]
+        };
+      } else {
+        // Solo una columna numérica, muestra el promedio general
+        const valores = this.csvData
+          .map(row => row[columnaNumericaHeader])
+          .filter((val: any) => typeof val === 'number');
+        const promedio = valores.reduce((a: number, b: number) => a + b, 0) / valores.length;
+        this.chartData = {
+          labels: [columnaNumericaHeader],
+          datasets: [
+            {
+              label: `Promedio`,
+              data: [promedio],
+              backgroundColor: '#42A5F5'
+            }
+          ]
+        };
+      }
+      this.chartOptions = {
+        responsive: true,
+        plugins: {
+          legend: { display: true }
+        }
+      };
+      this.mostrarGrafico = true;
+    } else {
+      this.mostrarGrafico = false;
+    }
   }
 }

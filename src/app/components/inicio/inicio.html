@@ -1,3 +1,12 @@
+<app-navbar></app-navbar>
+
+<!-- 3. Botones -->
+<div class="flex justify-content-end mt-4 gap-2">
+  <p-button label="Calcular Promedio" icon="pi pi-calculator" (onClick)="calcularPromedio()"></p-button>
+  <p-button label="Resetear Datos" icon="pi pi-refresh" severity="secondary" (onClick)="resetDatos($event)"></p-button>
+  <p-button label="Mostrar Gráfico" icon="pi pi-chart-bar" class="p-button-info" (onClick)="generarGrafico()"></p-button>
+</div>
+
 <p-toast></p-toast>
 
 <div class="container">
@@ -32,21 +41,7 @@
           class="p-datatable-striped"
         >
 
-          <!-- 2.a Buscador global -->
-          <ng-template pTemplate="caption">
-            <div class="flex justify-content-between align-items-center">
-              <h5 class="m-0">Datos CSV</h5>
-              <span class="p-input-icon-left">
-                <i class="pi pi-search"></i>
-                <input
-                  pInputText
-                  #buscar
-                  type="text"
-                  (input)="dt.filterGlobal(buscar.value, 'contains')"
-                  placeholder="Buscar..." />
-              </span>
-            </div>
-          </ng-template>
+
 
           <!-- 2.b Cabecera -->
           <ng-template pTemplate="header">
@@ -93,12 +88,7 @@
           </p-paginator>
         </div>
 
-        <!-- 3. Botones -->
-        <div class="flex justify-content-end mt-4 gap-2">
-          <p-button label="Calcular Promedio" icon="pi pi-calculator" (onClick)="calcularPromedio()"></p-button>
-          <p-button label="Filtrar Datos" icon="pi pi-filter" (onClick)="filtrarDatos()"></p-button>
-          <p-button label="Resetear Datos" icon="pi pi-refresh" severity="secondary" (onClick)="resetDatos($event)"></p-button>
-        </div>
+
 
       </div>
     </div>
@@ -118,3 +108,12 @@
     <p-button icon="pi pi-check" label="Aceptar" (onClick)="mostrarDialogoResultado = false" class="p-button-text"></p-button>
   </ng-template>
 </p-dialog>
+
+
+
+
+
+<!-- GRAFICO -->
+<div *ngIf="mostrarGrafico" class="mt-4">
+  <p-chart type="bar" [data]="chartData" [options]="chartOptions" class="h-[30rem]"></p-chart>
+</div>
