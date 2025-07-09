@@ -1,8 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
-import { NgForOf, NgIf } from '@angular/common';
+import {DecimalPipe, NgForOf, NgIf} from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-// Importaciones de componentes de PrimeNG
+// PrimeNG
 import { TableModule, Table } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -14,7 +14,10 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 import { ChartModule } from 'primeng/chart';
-import {Navbar} from '../navbar/navbar'; // <--- Asegúrate de importar esto
+import { Navbar } from '../navbar/navbar';
+import { Router } from '@angular/router';
+import { CvsServices } from '../../services/cvs-services';
+import { CsvSharedService } from '../../services/csv-shared-service';
 
 @Component({
   selector: 'app-inicio',
@@ -33,7 +36,8 @@ import {Navbar} from '../navbar/navbar'; // <--- Asegúrate de importar esto
     ChartModule,
     NgIf,
     NgForOf,
-    Navbar
+    Navbar,
+    DecimalPipe
   ],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css'
@@ -47,16 +51,24 @@ export class Inicio {
   mostrarDialogoResultado: boolean = false;
 
   // --- PAGINADOR ---
-  rows: number = 10;       // Filas por página
-  first: number = 0;       // Primer índice de la página
-  paginatedData: any[] = []; // Datos a mostrar en la página actual
+  rows: number = 10;
+  first: number = 0;
+  paginatedData: any[] = [];
 
   // --- GRÁFICO ---
   chartData: any = null;
   chartOptions: any = null;
   mostrarGrafico: boolean = false;
 
-  constructor(private messageService: MessageService) {}
+  // --- ESTADÍSTICAS DESCRIPTIVAS ---
+  descriptiveStats: any[] = [];
+
+  constructor(
+    private messageService: MessageService,
+    private csvService: CvsServices,
+    private csvShared: CsvSharedService,
+    private router: Router
+  ) {}
 
   onFileSelect(event: any): void {
     const file = event.files?.[0];
@@ -79,51 +91,17 @@ export class Inicio {
   }
 
   processCSVData(csvText: string): void {
-    const rows = csvText.split('\n').map(row => row.replace(/\r$/, ''));
-    const headers = rows[0].split(',').map(header => header.trim());
-    this.csvHeaders = headers;
+    const resultado = this.csvService.processCSVData(csvText);
+    this.csvHeaders = resultado.headers;
+    this.csvData = resultado.data;
+    this.csvShared.setData(this.csvHeaders, this.csvData); // Guardar para la otra página
 
-    this.csvData = [];
-    for (let i = 1; i < rows.length; i++) {
-      if (rows[i].trim()) {
-        const rowData = rows[i].split(',');
-        const row: any = {};
+    // Calcular estadísticas descriptivas
+    this.descriptiveStats = this.csvService.getDescriptiveStats(this.csvHeaders, this.csvData);
 
-        headers.forEach((header, index) => {
-          const value = rowData[index]?.trim() || '';
-          row[header] = value !== '' && !isNaN(Number(value)) ? Number(value) : value;
-        });
-
-        this.csvData.push(row);
-      }
-    }
     this.first = 0;
     this.updatePaginatedData();
-    this.mostrarGrafico = false; // Oculta el gráfico al cargar nuevos datos
-  }
-
-  calcularPromedio(): void {
-    const columnaNumericaHeader = this.csvHeaders.find(header =>
-      this.csvData.some(row => typeof row[header] === 'number')
-    );
-
-    if (columnaNumericaHeader) {
-      const valores = this.csvData
-        .map(row => row[columnaNumericaHeader])
-        .filter((val: any) => typeof val === 'number');
-
-      const suma = valores.reduce((acc: number, val: number) => acc + val, 0);
-      const promedio = valores.length > 0 ? suma / valores.length : 0;
-
-      this.resultadoOperacion = `El promedio de ${columnaNumericaHeader} es: ${promedio.toFixed(2)}`;
-      this.mostrarDialogoResultado = true;
-    } else {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'No hay datos numéricos',
-        detail: 'No se encontró ninguna columna con valores numéricos'
-      });
-    }
+    this.mostrarGrafico = false;
   }
 
 
@@ -149,70 +127,8 @@ export class Inicio {
     return item;
   }
 
-  // --- MÉTODO GRÁFICO ---
-  generarGrafico(): void {
-    const columnaNumericaHeader = this.csvHeaders.find(header =>
-      this.csvData.some(row => typeof row[header] === 'number')
-    );
-
-    if (columnaNumericaHeader) {
-      // Ejemplo: barras por cada valor único de una columna categórica (si hay)
-      const categoriaHeader = this.csvHeaders.find(header =>
-        header !== columnaNumericaHeader
-      );
-
-      if (categoriaHeader) {
-        // Agrupa por categoría
-        const grupos = this.csvData.reduce((acc: Record<string, number[]>, row: any) => {
-          const cat = row[categoriaHeader] || 'Sin categoría';
-          if (!acc[cat]) acc[cat] = [];
-          if (typeof row[columnaNumericaHeader] === 'number') {
-            acc[cat].push(row[columnaNumericaHeader]);
-          }
-          return acc;
-        }, {} as Record<string, number[]>);
-
-        const labels = Object.keys(grupos);
-        const promedios = labels.map(cat =>
-          grupos[cat].reduce((a: number, b: number) => a + b, 0) / grupos[cat].length
-        );
-
-        this.chartData = {
-          labels: labels,
-          datasets: [
-            {
-              label: `Promedio de ${columnaNumericaHeader}`,
-              data: promedios,
-              backgroundColor: '#42A5F5'
-            }
-          ]
-        };
-      } else {
-        // Solo una columna numérica, muestra el promedio general
-        const valores = this.csvData
-          .map(row => row[columnaNumericaHeader])
-          .filter((val: any) => typeof val === 'number');
-        const promedio = valores.reduce((a: number, b: number) => a + b, 0) / valores.length;
-        this.chartData = {
-          labels: [columnaNumericaHeader],
-          datasets: [
-            {
-              label: `Promedio`,
-              data: [promedio],
-              backgroundColor: '#42A5F5'
-            }
-          ]
-        };
-      }
-      this.chartOptions = {
-        responsive: true,
-        plugins: {
-          legend: { display: true }
-        }
-      };
-      this.mostrarGrafico = true;
-    } else {
-      this.mostrarGrafico = false;
-    }
+  // --- NAVEGAR A GRÁFICOS ---
+  irAGraficos() {
+    this.router.navigate(['/graficos']);
   }
 }

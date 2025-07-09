@@ -7,7 +7,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { FilterService, MessageService } from 'primeng/api';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {provideHttpClient, withFetch, withInterceptorsFromDi} from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,7 +18,10 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     FilterService,
     provideAnimationsAsync(),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(
+      withFetch(), // <-- ¡Esto habilita fetch!
+      withInterceptorsFromDi() // <-- Si usas interceptores vía DI
+    ),
     providePrimeNG({
       theme: {
         preset: Aura

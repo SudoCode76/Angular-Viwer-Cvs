@@ -1,12 +1,5 @@
 <app-navbar></app-navbar>
 
-<!-- 3. Botones -->
-<div class="flex justify-content-end mt-4 gap-2">
-  <p-button label="Calcular Promedio" icon="pi pi-calculator" (onClick)="calcularPromedio()"></p-button>
-  <p-button label="Resetear Datos" icon="pi pi-refresh" severity="secondary" (onClick)="resetDatos($event)"></p-button>
-  <p-button label="Mostrar Gráfico" icon="pi pi-chart-bar" class="p-button-info" (onClick)="generarGrafico()"></p-button>
-</div>
-
 <p-toast></p-toast>
 
 <div class="container">
@@ -40,9 +33,6 @@
           [tableStyle]="{ 'min-width': '50rem' }"
           class="p-datatable-striped"
         >
-
-
-
           <!-- 2.b Cabecera -->
           <ng-template pTemplate="header">
             <tr>
@@ -88,7 +78,48 @@
           </p-paginator>
         </div>
 
-
+        <!-- Estadísticas descriptivas con tabla PrimeNG -->
+        <div *ngIf="descriptiveStats.length > 0" class="mt-4">
+          <p-card header="Estadísticas Descriptivas">
+            <p-table
+              [value]="descriptiveStats"
+              [tableStyle]="{ 'min-width': '40rem' }"
+              class="p-datatable-striped stats-table"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Columna</th>
+                  <th>Cantidad</th>
+                  <th>Media</th>
+                  <th>Mediana</th>
+                  <th>Moda</th>
+                  <th>Mínimo</th>
+                  <th>Máximo</th>
+                  <th>Desviación</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-stat>
+                <tr>
+                  <td>{{ stat.columna }}</td>
+                  <td>{{ stat.cantidad }}</td>
+                  <td>{{ stat.media | number:'1.2-2' }}</td>
+                  <td>{{ stat.mediana | number:'1.2-2' }}</td>
+                  <td>{{ stat.moda }}</td>
+                  <td>{{ stat.minimo }}</td>
+                  <td>{{ stat.maximo }}</td>
+                  <td>{{ stat.desviacion | number:'1.2-2' }}</td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="8" style="text-align: center;">
+                    No hay estadísticas disponibles.
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        </div>
 
       </div>
     </div>
@@ -108,12 +139,3 @@
     <p-button icon="pi pi-check" label="Aceptar" (onClick)="mostrarDialogoResultado = false" class="p-button-text"></p-button>
   </ng-template>
 </p-dialog>
-
-
-
-
-
-<!-- GRAFICO -->
-<div *ngIf="mostrarGrafico" class="mt-4">
-  <p-chart type="bar" [data]="chartData" [options]="chartOptions" class="h-[30rem]"></p-chart>
-</div>

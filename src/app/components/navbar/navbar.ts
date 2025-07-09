@@ -16,6 +16,12 @@ export class Navbar {
       icon: 'pi pi-home',
       routerLink: '/'
     },
+    {
+      label: 'Graficos',
+      icon: 'pi pi-chart-bar',
+      routerLink: '/graficos'
+
+    },
 
     {
       label: 'Products',

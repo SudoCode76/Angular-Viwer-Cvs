@@ -1,0 +1,39 @@
+body, .card, .p-component {
+  background-color: #181818 !important;
+  color: #fff !important;
+}
+
+.card {
+  margin-bottom: 2rem;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(20,20,20,0.2);
+}
+
+h3 {
+  color: #fff !important;
+  margin-bottom: 1rem;
+}
+
+.p-chart {
+  margin-bottom: 2rem;
+}
+
+.graficos-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+}
+.graficos-spinner {
+  margin-top: 60px;
+}
+
+@media (max-width: 900px) {
+  .card {
+    padding: 0.5rem;
+  }
+  h3 {
+    font-size: 1.1rem;
+  }
+}

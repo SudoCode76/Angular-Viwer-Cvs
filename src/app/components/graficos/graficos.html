@@ -1,0 +1,25 @@
+<app-navbar></app-navbar>
+
+<div *ngIf="loading" class="graficos-spinner-container">
+  <p-progress-spinner ariaLabel="Cargando gráficos" strokeWidth="6" styleClass="graficos-spinner" [style]="{width: '60px', height: '60px'}"></p-progress-spinner>
+</div>
+
+<div *ngIf="!loading && !errorMsg && csvHeaders.length && csvData.length">
+  <div class="card">
+    <h3>Gráfico de Líneas con Tendencia</h3>
+    <p-chart type="line" [data]="lineData" [options]="lineOptions" style="height: 300px"></p-chart>
+  </div>
+  <div class="card">
+    <h3>Gráfico de Barras</h3>
+    <p-chart type="bar" [data]="barData" [options]="barOptions" style="height: 300px"></p-chart>
+  </div>
+  <div class="card">
+    <h3>Gráfico de Pastel</h3>
+    <p-chart type="pie" [data]="pieData" [options]="pieOptions" style="height: 300px"></p-chart>
+  </div>
+</div>
+
+<!-- Si hay error o no hay datos -->
+<div *ngIf="!loading && errorMsg" class="graficos-error">
+  <p>{{ errorMsg }}</p>
+</div>
