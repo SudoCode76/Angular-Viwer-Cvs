@@ -1,3 +1,15 @@
+# Introduccion
+En esta pagina web se puede cargar archivos cvs (carpeta cvs) y visualizar su contenido en una tabla.
+Asi mismo podra verlo graficamente y obtener estadisticas de los datos.
+
+
+# Antes de Inciar el Proyecto ejecutar
+```bash
+npm install
+```
+
+
+
 # ViwerCvs
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.4.
