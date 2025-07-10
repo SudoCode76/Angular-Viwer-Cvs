@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import * as XLSX from 'xlsx';
+
 
 @Injectable({
   providedIn: 'root'
@@ -14,13 +16,53 @@ export class CvsServices {
         const rowData = rows[i].split(',');
         const row: any = {};
         headers.forEach((header, index) => {
-          const value = rowData[index]?.trim() || '';
+          let value = rowData[index]?.trim() || '';
+          if (/^-?\d+,\d+$/.test(value)) value = value.replace(',', '.');
           row[header] = value !== '' && !isNaN(Number(value)) ? Number(value) : value;
         });
         data.push(row);
       }
     }
     return { headers, data };
+  }
+
+  // XLSX con selección de hoja y fila header
+  processXLSX(file: File, options?: { headerRow?: number, sheetName?: string, selectedColumns?: string[] })
+    : Promise<{ headers: string[], data: any[], allSheetNames: string[] }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const allSheetNames = workbook.SheetNames;
+        const wsname = options?.sheetName ?? workbook.SheetNames[0];
+        const ws = workbook.Sheets[wsname];
+        const sheetData: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+        const headerRow = options?.headerRow ?? 0;
+        const headers = (sheetData[headerRow] || []).map((h: any) => (h ?? '').toString().trim());
+        const dataRows = sheetData.slice(headerRow + 1).filter(row => row.some(cell => cell != null && cell !== ''));
+        const dataArr = dataRows.map(row => {
+          const obj: any = {};
+          headers.forEach((header, idx) => {
+            let value = (row[idx] ?? '').toString().trim();
+            if (/^-?\d+,\d+$/.test(value)) value = value.replace(',', '.');
+            obj[header] = value !== '' && !isNaN(Number(value)) ? Number(value) : value;
+          });
+          return obj;
+        });
+        const filteredHeaders = options?.selectedColumns && options.selectedColumns.length > 0
+          ? options.selectedColumns
+          : headers;
+        const filteredData = dataArr.map(row => {
+          const obj: any = {};
+          filteredHeaders.forEach(h => obj[h] = row[h]);
+          return obj;
+        });
+        resolve({ headers: filteredHeaders, data: filteredData, allSheetNames });
+      };
+      reader.onerror = err => reject(err);
+      reader.readAsArrayBuffer(file);
+    });
   }
 
   generarGrafico(headers: string[], data: any[]): any {
@@ -124,7 +166,7 @@ export class CvsServices {
     return Math.sqrt(variance);
   }
 
-  // NUEVO: tendencia lineal (recta de regresión)
+  // Tendencia lineal (recta de regresión)
   getLinearTrend(xVals: number[], yVals: number[]): number[] {
     if (xVals.length !== yVals.length || xVals.length === 0) return [];
     const n = xVals.length;
@@ -140,5 +182,25 @@ export class CvsServices {
     const b = (sumY * sumXX - sumX * sumXY) / denominator;
 
     return xVals.map(x => a * x + b);
+  }
+
+  // Correlación de Pearson
+  getPearsonCorrelation(xVals: number[], yVals: number[]): number | null {
+    if (xVals.length !== yVals.length || xVals.length === 0) return null;
+    const n = xVals.length;
+    const meanX = xVals.reduce((a, b) => a + b, 0) / n;
+    const meanY = yVals.reduce((a, b) => a + b, 0) / n;
+    let num = 0;
+    let denX = 0;
+    let denY = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xVals[i] - meanX;
+      const dy = yVals[i] - meanY;
+      num += dx * dy;
+      denX += dx * dx;
+      denY += dy * dy;
+    }
+    if (denX === 0 || denY === 0) return null;
+    return num / Math.sqrt(denX * denY);
   }
 }

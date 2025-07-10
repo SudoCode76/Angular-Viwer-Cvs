@@ -3,7 +3,7 @@
 <p-toast></p-toast>
 
 <div class="container">
-  <p-card header="Carga y Visualización de CSV" class="mt-4">
+  <p-card header="Carga y Visualización de Datos" class="mt-4">
     <div class="card-container">
 
       <!-- 1. Carga de archivo CSV -->
@@ -15,12 +15,69 @@
         [showUploadButton]="false"
         [showCancelButton]="false"
         (onSelect)="onFileSelect($event)"
+        class="mb-3">
+      </p-fileUpload>
+
+      <!-- 2. Carga de archivo XLSX -->
+      <p-fileUpload
+        mode="basic"
+        chooseLabel="Seleccionar XLSX"
+        accept=".xlsx"
+        [auto]="true"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        (onSelect)="onXLSXSelect($event)"
         class="mb-4">
       </p-fileUpload>
 
-      <!-- 2. Tabla solo si hay datos -->
-      <div *ngIf="csvData.length > 0" class="csv-data-section">
+      <!-- 3. Preview y selección XLSX -->
+      <div *ngIf="xlsxFile">
+        <div class="mb-2">
+          <strong>Vista previa de datos XLSX</strong>
+          <div class="mb-2">
+            <label>Hoja:</label>
+            <p-select [(ngModel)]="xlsxSelectedSheet"
+                      [options]="xlsxSheetNames"
+                      (onChange)="onXLSXSheetChange()"
+                      [style]="{width:'220px', display:'inline-block'}">
+              <ng-template let-option pTemplate="item">{{ option }}</ng-template>
+            </p-select>
+            <label class="ml-3">Fila de encabezado:</label>
+            <p-select [(ngModel)]="xlsxHeaderRow"
+                      [options]="xlsxHeaderRowOptions"
+                      (onChange)="onXLSXHeaderRowChange()"
+                      [style]="{width:'80px', display:'inline-block'}">
+              <ng-template let-option pTemplate="item">{{ option + 1 }}</ng-template>
+            </p-select>
+          </div>
+        </div>
+        <table class="xlsx-preview-table">
+          <tr *ngFor="let row of xlsxPreview">
+            <td *ngFor="let cell of row">{{ cell }}</td>
+          </tr>
+        </table>
+        <div class="mt-2">
+          <label>Columnas a usar:</label>
+          <p-multiSelect
+            [options]="xlsxHeaders"
+            [(ngModel)]="xlsxSelectedColumns"
+            optionLabel=""
+            defaultLabel="Selecciona columnas"
+            [style]="{width:'320px'}">
+            <ng-template let-option pTemplate="item">{{ option }}</ng-template>
+          </p-multiSelect>
+          <button type="button" class="ml-2" pButton label="Usar columnas" (click)="useXLSXColumns()"
+                  [disabled]="!xlsxSelectedColumns.length"></button>
+        </div>
+        <div *ngIf="xlsxWarnNonNumeric" class="warn-non-numeric mt-2">
+          <i class="pi pi-exclamation-triangle"></i>
+          <span>¡Advertencia! Hay columnas o datos no numéricos, algunas funciones estadísticas pueden no funcionar correctamente.</span>
+        </div>
+        <hr>
+      </div>
 
+      <!-- 4. Tabla solo si hay datos -->
+      <div *ngIf="csvData.length > 0" class="csv-data-section">
         <p-toolbar class="mb-3">
           <ng-template pTemplate="start">
             <span class="font-bold">Total de registros: {{ csvData.length }}</span>
@@ -33,7 +90,7 @@
           [tableStyle]="{ 'min-width': '50rem' }"
           class="p-datatable-striped"
         >
-          <!-- 2.b Cabecera -->
+          <!-- Cabecera -->
           <ng-template pTemplate="header">
             <tr>
               <ng-container *ngFor="let header of csvHeaders; trackBy: trackHeader">
@@ -44,8 +101,7 @@
               </ng-container>
             </tr>
           </ng-template>
-
-          <!-- 2.c Cuerpo -->
+          <!-- Cuerpo -->
           <ng-template pTemplate="body" let-rowData>
             <tr>
               <ng-container *ngFor="let header of csvHeaders; trackBy: trackHeader">
@@ -53,8 +109,7 @@
               </ng-container>
             </tr>
           </ng-template>
-
-          <!-- 2.d Sin datos -->
+          <!-- Sin datos -->
           <ng-template pTemplate="emptymessage">
             <tr>
               <td [attr.colspan]="csvHeaders.length" style="text-align: center;">
@@ -78,7 +133,7 @@
           </p-paginator>
         </div>
 
-        <!-- Estadísticas descriptivas con tabla PrimeNG -->
+        <!-- Estadísticas descriptivas -->
         <div *ngIf="descriptiveStats.length > 0" class="mt-4">
           <p-card header="Estadísticas Descriptivas">
             <p-table
@@ -120,13 +175,12 @@
             </p-table>
           </p-card>
         </div>
-
       </div>
     </div>
   </p-card>
 </div>
 
-<!-- 4. Diálogo de resultados -->
+<!-- Diálogo de resultados -->
 <p-dialog
   header="Resultado de la operación"
   [(visible)]="mostrarDialogoResultado"

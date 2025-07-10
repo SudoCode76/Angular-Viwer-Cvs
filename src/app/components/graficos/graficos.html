@@ -5,6 +5,43 @@
 </div>
 
 <div *ngIf="!loading && !errorMsg && csvHeaders.length && csvData.length">
+  <!-- Correlación -->
+  <div class="card" *ngIf="numericHeaders.length > 1">
+    <h3>Índice de Correlación</h3>
+    <div class="correlacion-selector">
+      <div>
+        <label>Columna X:</label>
+        <p-select [options]="numericHeaders"
+                  [(ngModel)]="colX"
+                  (onChange)="calcularCorrelacion()"
+                  [style]="{width: '200px'}">
+          <ng-template let-option pTemplate="item">{{ option }}</ng-template>
+        </p-select>
+      </div>
+      <div style="margin-left:1rem;">
+        <label>Columna Y:</label>
+        <p-select [options]="numericHeaders"
+                  [(ngModel)]="colY"
+                  (onChange)="calcularCorrelacion()"
+                  [style]="{width: '200px'}">
+          <ng-template let-option pTemplate="item">{{ option }}</ng-template>
+        </p-select>
+      </div>
+    </div>
+    <div class="correlacion-resultado" *ngIf="correlation !== null">
+      <p>
+        Coeficiente de correlación de Pearson (r): <b>{{ correlation | number:'1.4-4' }}</b>
+      </p>
+      <p>
+        {{ correlationDescription }}
+      </p>
+    </div>
+    <!-- Gráfico de dispersión -->
+    <div *ngIf="scatterData">
+      <p-chart type="scatter" [data]="scatterData" [options]="scatterOptions" style="height: 340px"></p-chart>
+    </div>
+  </div>
+
   <div class="card">
     <h3>Gráfico de Líneas con Tendencia</h3>
     <p-chart type="line" [data]="lineData" [options]="lineOptions" style="height: 300px"></p-chart>

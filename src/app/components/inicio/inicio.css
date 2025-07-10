@@ -44,3 +44,20 @@
   font-weight: bold;
 }
 
+.warn-non-numeric {
+  color: #ff9800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+.xlsx-preview-table {
+  border-collapse: collapse;
+  margin-bottom: 0.5rem;
+}
+.xlsx-preview-table td {
+  border: 1px solid #ddd;
+  padding: 2px 6px;
+  background: #222;
+  color: #fff;
+}
